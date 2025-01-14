@@ -7312,7 +7312,6 @@ a.anchor-link {
                     processEnvironments: true
                 },
                 displayAlign: 'center',
-                messageStyle: 'none',
                 CommonHTML: {
                     linebreaks: {
                     automatic: true
@@ -7517,13 +7516,18 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Setting-up-Event-Markers-(Triggers)-for-Your-Task">Setting up Event Markers (Triggers) for Your Task<a class="anchor-link" href="#Setting-up-Event-Markers-(Triggers)-for-Your-Task">¶</a></h1><p>In many EEG or physiological experiments, it’s crucial to <strong>mark</strong> task events using “triggers” (also called <strong>event markers</strong>). By sending numeric codes to your recording system, you can synchronize recorded signals with specific experimental conditions or participant responses.</p>
-<p>This notebook illustrates <strong>two main approaches</strong> for sending triggers:</p>
+<h1 id="Guide-to-Sending-Tonic-and-Physical-(Phasic)-Triggers-from-PsychoPy-to-a-DSI-24-EEG-System">Guide to Sending Tonic and Physical (Phasic) Triggers from PsychoPy to a DSI-24 EEG System<a class="anchor-link" href="#Guide-to-Sending-Tonic-and-Physical-(Phasic)-Triggers-from-PsychoPy-to-a-DSI-24-EEG-System">¶</a></h1><p><strong>Author:</strong> <em>Sina Esmaeili</em><br/>
+<strong>Date:</strong> <em>January 13, 2025</em></p>
+<hr/>
+<h2 id="1.-Introduction">1. Introduction<a class="anchor-link" href="#1.-Introduction">¶</a></h2><p>In many EEG experiments, it’s essential to send <strong>event markers</strong> (also called <em>triggers</em>) from your behavioral task software (e.g., <strong>PsychoPy</strong>) to your EEG amplifier (e.g., <strong>DSI-24</strong>). These markers help you align the recorded EEG signals with specific events in your paradigm (e.g., stimulus onsets, responses, condition changes).</p>
+<p>In this guide, you will learn:</p>
 <ol>
-<li><strong>Phasic Triggers</strong>: Short pulses at key moments (e.g., stimulus onset, button press).</li>
-<li><strong>Tonic Triggers</strong>: Holding a trigger line “high” for the duration of an event (then manually resetting).</li>
+<li>The <strong>difference</strong> between <strong>Tonic</strong> (sustained) triggers and <strong>Physical</strong> (often called <em>Phasic</em>) triggers.</li>
+<li>How to <strong>open and manage</strong> the serial connection to a <strong>DSI-24</strong> system.</li>
+<li><strong>Example code</strong> (in Python/PsychoPy) that demonstrates each trigger method in the context of a <strong>Go/No-Go</strong> experiment.</li>
 </ol>
-<p>We’ll use a <strong>Go/No-Go</strong> task example (uploaded to <a href="https://pavlovia.org/">Pavlovia</a>) to demonstrate how you might embed these triggers into your PsychoPy code. Note that while we showcase <strong>Go/No-Go</strong>, the same principles apply to <strong>any</strong> task requiring event markers.</p>
+<p>The explanations aim to be beginner-friendly while still maintaining the technical accuracy needed for proper EEG event marking.</p>
+<hr/>
 </div>
 </div>
 </div>
@@ -7534,9 +7538,9 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="1.-General-Setup">1. General Setup<a class="anchor-link" href="#1.-General-Setup">¶</a></h2><h3 id="1.1-Hardware-and-Serial-Communication">1.1 Hardware and Serial Communication<a class="anchor-link" href="#1.1-Hardware-and-Serial-Communication">¶</a></h3><ul>
-<li><strong>Neurospec MMBT-S</strong> acts as a bridge between your computer’s serial port and the DSI system (or other hardware).</li>
-<li>On Windows, your serial port might be <code>COM3</code>, while on Linux/macOS, it’s often named something like <code>/dev/ttyUSB0</code> or <code>/dev/cu.usbserial</code>.</li>
+<h2 id="2.-Background-on-DSI-24-and-Triggering">2. Background on DSI-24 and Triggering<a class="anchor-link" href="#2.-Background-on-DSI-24-and-Triggering">¶</a></h2><h3 id="1.1-Hardware-and-Serial-Communication">1.1 Hardware and Serial Communication<a class="anchor-link" href="#1.1-Hardware-and-Serial-Communication">¶</a></h3><p>The <strong>DSI-24</strong> system is a wireless EEG headset that can receive numeric trigger values through a specialized interface (often via a <strong>serial port</strong> or other I/O device). These numeric codes are recorded in parallel with the EEG data, allowing you to later identify exactly when certain events occurred.</p>
+<h3 id="2.1-Physical-Connection">2.1 Physical Connection<a class="anchor-link" href="#2.1-Physical-Connection">¶</a></h3><ul>
+<li>You typically connect your computer (running PsychoPy) to the DSI system’s data acquisition software (like <strong>DSI-Streamer</strong>) via a USB-to-serial interface or a dedicated trigger interface. When you connect the USB-to-serial interface to the DSI and also the Pscyhopy system you need to find the COM port associated with the USB-to-serial interface in the system using the Psychopy.</li>
 </ul>
 <p><strong>Finding Your COM Port</strong></p>
 <ul>
@@ -7559,24 +7563,17 @@ a.anchor-link {
 </ol>
 </li>
 </ul>
-<p>Below is an example of how to open the port using Python’s <code>serial</code> library. Adjust the port name and settings as needed:</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="2.2-Opening-the-Serial-Port">2.2 Opening the Serial Port<a class="anchor-link" href="#2.2-Opening-the-Serial-Port">¶</a></h3><p>Use Python’s built-in <code>serial</code> library (or <code>pyserial</code>) in your PsychoPy script to open and configure the port.
+Example:</p>
 <div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">serial</span>
-<span class="c1">## Open the serial port; adjust 'COM3' to match your system</span>
-<span class="n">Ser</span> <span class="o">=</span> <span class="n">serial</span><span class="o">.</span><span class="n">Serial</span><span class="p">(</span><span class="s1">'COM3'</span><span class="p">)</span>
-<span class="c1">## Immediately reset the trigger line to 0 (idle state)</span>
-<span class="n">Ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Serial port opened and trigger set to 0."</span><span class="p">)</span>
+
+<span class="c1"># Replace 'COM3' with the actual port name on your machine.</span>
+<span class="c1"># For macOS or Linux, this may look like '/dev/ttyUSB0'</span>
+<span class="n">ser</span> <span class="o">=</span> <span class="n">serial</span><span class="o">.</span><span class="n">Serial</span><span class="p">(</span><span class="s1">'COM3'</span><span class="p">)</span>
+<span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>  <span class="c1"># Reset trigger line to 0 at the start</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"DSI-24 serial port opened. Trigger line set to 0."</span><span class="p">)</span>
 </pre></div>
+<hr/>
 </div>
 </div>
 </div>
@@ -7587,122 +7584,62 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="1.2-Tonic-vs.-Phasic-Triggers:-When-to-Use-Which?">1.2 Tonic vs. Phasic Triggers: When to Use Which?<a class="anchor-link" href="#1.2-Tonic-vs.-Phasic-Triggers:-When-to-Use-Which?">¶</a></h3><p>After setting up your serial port connection (section 1.1), the next step is to decide <strong>how</strong> you want to send triggers to your EEG/physiology device. Generally, you have <strong>two</strong> main styles:</p>
-<ol>
-<li><strong>Tonic (Sustained) Triggers</strong></li>
-<li><strong>Phasic (Transient) Triggers</strong></li>
-</ol>
-<p>Below is a more detailed overview of when each strategy is preferred, with references to common research practices.</p>
-<h4 id="1.2.1-Tonic-(Sustained)-Triggers">1.2.1 Tonic (Sustained) Triggers<a class="anchor-link" href="#1.2.1-Tonic-(Sustained)-Triggers">¶</a></h4><p><strong>What Is It?</strong></p>
-<ul>
-<li>You set the trigger line to a nonzero value at the <strong>start</strong> of an event/condition, keep it high <strong>throughout</strong> that event, and then <strong>manually reset</strong> it to 0 at the end.</li>
+<h2 id="3.-Tonic-vs.-Phasic-Triggers:-When-to-Use-Which?">3. Tonic vs. Phasic Triggers: When to Use Which?<a class="anchor-link" href="#3.-Tonic-vs.-Phasic-Triggers:-When-to-Use-Which?">¶</a></h2><p>In EEG experiments, triggers mark key moments in your task so that recorded brain signals can be linked back to specific events or conditions. Two main styles are commonly used: <strong>Tonic</strong> (sustained) triggers and <strong>Phasic</strong> (brief) triggers. Choosing the right approach depends on how long your events last, how precisely you need to mark them, and what your subsequent analysis requires.</p>
+<h3 id="3.1-Tonic-(Sustained)-Triggers">3.1 Tonic (Sustained) Triggers<a class="anchor-link" href="#3.1-Tonic-(Sustained)-Triggers">¶</a></h3><h4 id="Definition">Definition<a class="anchor-link" href="#Definition">¶</a></h4><p>A <strong>tonic trigger</strong> is set to a nonzero value at the start of an event or condition—such as a block of trials or a prolonged task state—and remains at that value until you explicitly reset it to zero.</p>
+<h4 id="When-to-Use-Tonic-Triggers">When to Use Tonic Triggers<a class="anchor-link" href="#When-to-Use-Tonic-Triggers">¶</a></h4><ul>
+<li><strong>Long Blocks/States</strong><br/>
+If your experiment has extended intervals (e.g., a 2-minute “Task” vs. a 2-minute “Rest”), a tonic trigger continuously indicates which block is active.</li>
+<li><strong>Multi-Step Trials</strong><br/>
+In more complex or lengthy trials, you might keep a tonic trigger high and briefly add phasic pulses within that same period for sub-events.</li>
+<li><strong>Neurofeedback or Closed-Loop</strong><br/>
+Real-time systems often benefit from a constant marker to distinguish “active task” versus “baseline” phases.</li>
 </ul>
-<p><strong>Typical Use Cases</strong></p>
-<ol>
-<li><p><strong>Long-Duration Conditions</strong></p>
-<ul>
-<li>For instance, if your experiment has blocks of trials (e.g., 2-minute blocks of task vs. 2-minute blocks of rest) and you want your EEG data to reflect which block is active.</li>
-<li>Tonic markers help you see, in the raw data, a continuous “high” value that indicates “Block A” is ongoing versus “Block B.”</li>
+<h4 id="Pros">Pros<a class="anchor-link" href="#Pros">¶</a></h4><ul>
+<li><strong>Easy to Visualize</strong>: You can see in the raw data exactly when a condition is active.</li>
+<li><strong>Simpler Setup for Long Durations</strong>: Once you set the trigger, it stays high until you change it.</li>
 </ul>
-</li>
-<li><p><strong>Multi-Step or Complex Events</strong></p>
-<ul>
-<li>In some paradigms, you might have a longer “trial” with sub-events. You might hold a <em>tonic</em> trigger for the entire trial, then also send <strong>phasic</strong> pulses within that trial for specific sub-events.</li>
-<li>Example: In a working memory task, you raise a tonic trigger for “encoding phase” and only lower it after the final recall response is done.</li>
+<h4 id="Cons">Cons<a class="anchor-link" href="#Cons">¶</a></h4><ul>
+<li><strong>Must Remember to Reset</strong>: Forgetting to reset could cause confusion in later blocks.</li>
+<li><strong>Less Precision</strong>: Not ideal for capturing brief events that occur within the sustained period.</li>
 </ul>
-</li>
-<li><p><strong>Neurofeedback or Real-Time Applications</strong></p>
-<ul>
-<li>Some real-time or closed-loop systems need a continuous “state” marker to know if the subject is in a “trial” vs. “rest” phase. A tonic trigger can facilitate that.</li>
+<h3 id="3.2-Phasic-(Brief)-Triggers">3.2 Phasic (Brief) Triggers<a class="anchor-link" href="#3.2-Phasic-(Brief)-Triggers">¶</a></h3><h4 id="Definition">Definition<a class="anchor-link" href="#Definition">¶</a></h4><p>A <strong>phasic trigger</strong> is a short pulse (e.g., 10–50 ms) that is turned on at a specific moment—like stimulus onset or a button press—and then immediately turned back off.</p>
+<h4 id="When-to-Use-Phasic-Triggers">When to Use Phasic Triggers<a class="anchor-link" href="#When-to-Use-Phasic-Triggers">¶</a></h4><ul>
+<li><strong>Discrete Stimulus Onsets</strong><br/>
+In many ERP (Event-Related Potential) studies (e.g., P300 paradigms), each stimulus is marked by a quick pulse for precise time-locking.</li>
+<li><strong>Rapid-Fire Events</strong><br/>
+If multiple events happen in quick succession, phasic pulses ensure each one is separately recorded without overlap.</li>
+<li><strong>Short Tasks</strong><br/>
+If a stimulus or response is short-lived (like a quick beep or flash), a short trigger pulse aligns with it neatly.</li>
 </ul>
-</li>
-</ol>
-<p><strong>Pros</strong></p>
-<ul>
-<li><strong>Clear in the data</strong>: You can visually see in the raw EEG/physio signals that “the experiment was in condition X” from time A to time B.</li>
-<li><strong>Simplicity</strong>: For truly extended events, it can be simpler to just set once at onset and reset at offset.</li>
+<h4 id="Pros">Pros<a class="anchor-link" href="#Pros">¶</a></h4><ul>
+<li><strong>High Temporal Precision</strong>: Excellent for analyzing reaction times or detecting ERP components.</li>
+<li><strong>Reduces Overlap</strong>: The trigger resets to 0 quickly, so you won’t accidentally obscure the next event.</li>
 </ul>
-<p><strong>Cons</strong></p>
-<ul>
-<li><strong>Risk of forgetting to reset</strong>: If you leave the trigger high, you might confuse subsequent phases or events.</li>
-<li><strong>Less precise</strong> for short or frequent events inside that sustained period.</li>
+<h4 id="Cons">Cons<a class="anchor-link" href="#Cons">¶</a></h4><ul>
+<li><strong>No Long-Duration Indication</strong>: You lose a continuous marker of an extended condition or block.</li>
+<li><strong>Hardware Sensitivity</strong>: Some EEG amplifiers require a minimum pulse width (e.g., 10 ms) to reliably detect the trigger.</li>
 </ul>
-<p><strong>Key Advice</strong></p>
-<ul>
-<li>Use tonic triggers when you specifically want a <strong>continuous</strong> marker in the EEG/physio record, or when your block/condition is distinctly separate in time and you do not need to mark sub-events with the same line.</li>
-<li>If your design also requires marking <strong>shorter</strong> sub-events within the same block, consider <strong>combining</strong> a tonic trigger (for the entire block) with <strong>phasic</strong> triggers (for each sub-event).</li>
-</ul>
-<h4 id="1.2.2-Phasic-(Transient)-Triggers">1.2.2 Phasic (Transient) Triggers<a class="anchor-link" href="#1.2.2-Phasic-(Transient)-Triggers">¶</a></h4><p><strong>What Is It?</strong></p>
-<ul>
-<li>You write a nonzero value for only a <strong>brief</strong> period (often 10–50 ms) at the <strong>exact moment</strong> something happens (e.g., stimulus onset, subject response), and then reset to 0 immediately afterward (or automatically after the short duration).</li>
-</ul>
-<p><strong>Typical Use Cases</strong></p>
-<ol>
-<li><p><strong>Discrete Stimulus Onsets</strong></p>
-<ul>
-<li>Most common in classic ERP (Event-Related Potential) studies: each stimulus onset is marked by a short pulse so you can epoch the EEG data precisely around that time.</li>
-<li>E.g., P300 paradigms often rely on phasic triggers to time-lock the onset of an oddball stimulus.</li>
+<h3 id="3.3-Choosing-the-Right-Approach">3.3 Choosing the Right Approach<a class="anchor-link" href="#3.3-Choosing-the-Right-Approach">¶</a></h3><ul>
+<li><strong>Experiment Duration</strong><ul>
+<li>If your event or block lasts seconds to minutes and you want to visualize that entire period in the data, use <strong>tonic</strong>.</li>
+<li>If you only need to mark precise, short-lived events, choose <strong>phasic</strong>.</li>
 </ul>
 </li>
-<li><p><strong>Responses or Rapid Sequences of Events</strong></p>
-<ul>
-<li>Whenever multiple triggers might occur <strong>close together</strong>—for example, if you have a fast-paced task with many short stimuli or responses.</li>
-<li>Phasic pulses ensure each event is distinctly marked without overlap.</li>
+<li><strong>Analysis Goals</strong><ul>
+<li><strong>ERP or Time-Locked</strong> analyses (e.g., measuring latencies or reaction times) typically rely on <strong>phasic</strong> triggers.</li>
+<li><strong>Block-Based</strong> or <strong>Neurofeedback</strong> designs often benefit from <strong>tonic</strong> triggers to indicate when each condition starts and ends.</li>
 </ul>
 </li>
-<li><p><strong>Short-Lived States</strong></p>
-<ul>
-<li>If you have an event that lasts only a few milliseconds or tens of milliseconds (e.g., a flash or a beep), a phasic trigger can align tightly with that ephemeral event.</li>
+<li><strong>Possible Hybrid</strong><br/>
+Many experiments combine both: a tonic trigger to denote the overall block (e.g., “Condition A”), plus phasic triggers to mark each stimulus or response within that block.</li>
 </ul>
-</li>
-</ol>
-<p><strong>Pros</strong></p>
-<ul>
-<li><strong>High temporal precision</strong>: Perfect for analyzing latencies in ERPs, reaction times, etc.</li>
-<li><strong>Minimal risk of overlap</strong>: Because it resets to 0 quickly, you won’t accidentally obscure subsequent triggers.</li>
+<h3 id="3.4-Summary">3.4 Summary<a class="anchor-link" href="#3.4-Summary">¶</a></h3><ul>
+<li><strong>Tonic = Sustained</strong> marker (high throughout a block or long event).</li>
+<li><strong>Phasic = Brief Pulse</strong> (ideal for short, discrete events).</li>
+<li><strong>Hybrid Approach</strong>: Use tonic for broad phases and phasic for precise event timing.</li>
 </ul>
-<p><strong>Cons</strong></p>
-<ul>
-<li><strong>Not well-suited to representing a sustained state</strong>: You cannot just look at raw data and see “the line is high the whole time.”</li>
-<li>If your hardware or software requires a certain <strong>minimum</strong> pulse length (e.g., at least 10 ms) to register, you have to ensure your phasic duration is long enough to be reliably detected.</li>
-</ul>
-<p><strong>Key Advice</strong></p>
-<ul>
-<li>Use phasic triggers if you want <strong>clean, discrete</strong> event markers for time-locking in your data analysis (ERP or other trial-based analyses).</li>
-<li>Double-check your hardware’s <strong>minimum pulse width</strong> requirements. Many EEG amplifiers reliably detect pulses as short as 5–10 ms, but some might need 20–50 ms to register.</li>
-</ul>
-<h4 id="1.2.3-Additional-Literature-Based-Insights">1.2.3 Additional Literature-Based Insights<a class="anchor-link" href="#1.2.3-Additional-Literature-Based-Insights">¶</a></h4><ul>
-<li><strong>Clinical/Neuropsychological</strong> tasks (e.g., oddball paradigms, CNV tasks) typically rely on <strong>phasic</strong> pulses for each stimulus or trial event, because analysis focuses on event-locked potentials.</li>
-<li><strong>Longer neurofeedback</strong> or <strong>block-based</strong> designs (e.g., fMRI block designs adapted to EEG) might use <strong>tonic</strong> triggers to denote each block’s start/end.</li>
-<li><strong>Multi-level</strong> tasks can combine both: a <strong>tonic</strong> marker to indicate which “block” or “task condition” is active, plus <strong>phasic</strong> markers for each stimulus/response within that block.</li>
-<li>In <strong>rapid-serial-visual-presentation</strong> (RSVP) studies, <strong>phasic</strong> markers are vital for each item in the stream (since items appear quickly), but if you have a top-level block or condition, you might also add a tonic marker for that block.</li>
-</ul>
-<h4 id="1.2.4-Deciding-Which-Method-to-Use">1.2.4 Deciding Which Method to Use<a class="anchor-link" href="#1.2.4-Deciding-Which-Method-to-Use">¶</a></h4><ul>
-<li><p><strong>Experiment Duration &amp; Structure</strong></p>
-<ul>
-<li>If your event or condition lasts a significant portion of time (seconds to minutes) and you want your data to reflect that entire period as distinct from the rest, consider a <strong>tonic</strong> marker.</li>
-<li>If you have rapid, frequent events where you only need to know <strong>exact</strong> onset times, <strong>phasic</strong> pulses are typically the standard.</li>
-</ul>
-</li>
-<li><p><strong>Analysis Requirements</strong></p>
-<ul>
-<li>For <strong>ERP or time-locked</strong> analyses: short, discrete triggers (phasic) are typically essential.</li>
-<li>For identifying <strong>global states</strong> (like “this block is a dual-task condition,” “that block is single-task,” etc.), a tonic approach helps highlight block boundaries.</li>
-</ul>
-</li>
-<li><p><strong>Hardware Considerations</strong></p>
-<ul>
-<li>Some systems need a minimum trigger width (e.g., 5–10 ms). If you go too short, the device might miss it.</li>
-<li>If using a tonic trigger, be absolutely sure to reset it—some recording systems can interpret repeated “high” states incorrectly if not managed well.</li>
-</ul>
-</li>
-</ul>
-<h4 id="1.2.5-Conclusion">1.2.5 Conclusion<a class="anchor-link" href="#1.2.5-Conclusion">¶</a></h4><ul>
-<li><strong>Tonic</strong> = <em>Sustained</em>, indicating a condition that persists for a significant duration.</li>
-<li><strong>Phasic</strong> = <em>Short pulses</em>, precisely time-locked to important, <strong>momentary</strong> events.</li>
-<li><strong>Combination</strong> = Use <strong>tonic</strong> for broad phases (like block-level markers) and <strong>phasic</strong> for <strong>specific within-block</strong> triggers (like stimulus onsets or responses).</li>
-</ul>
-<p>By reviewing the typical usage in EEG/physiology studies and referencing well-known paradigms (ERP tasks, block-based designs, etc.), you can select the approach—or <strong>mix</strong> of approaches—that best fits your experimental design and analysis goals.</p>
+<p>Selecting the right style—or a combination—ensures your EEG recordings reflect exactly what’s happening in your task. Clear triggers help you align neural data with behavioral events, making your subsequent analysis more accurate and meaningful.</p>
+<hr/>
 </div>
 </div>
 </div>
@@ -7713,14 +7650,13 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="1.3-Immediate-vs.-On-Flip-Trigger-Timing">1.3 Immediate vs. On-Flip Trigger Timing<a class="anchor-link" href="#1.3-Immediate-vs.-On-Flip-Trigger-Timing">¶</a></h3><p>Building on the question of <strong>which</strong> trigger style (tonic or phasic) you need (section 1.2), there’s also the matter of <strong>when</strong> you want the trigger to fire in your PsychoPy code. Specifically:</p>
+<h2 id="4.-Immediate-vs.-On-Flip-Trigger-Timing">4. Immediate vs. On-Flip Trigger Timing<a class="anchor-link" href="#4.-Immediate-vs.-On-Flip-Trigger-Timing">¶</a></h2><p>Beyond selecting <strong>tonic</strong> or <strong>phasic</strong> triggers, you also need to decide <strong>when</strong> in the PsychoPy drawing cycle these triggers should be sent. Timing can be handled in two main ways:</p>
 <ol>
 <li><strong>Immediate</strong>: The trigger is sent the moment your code executes that line.</li>
 <li><strong>On-Flip</strong>: The trigger is scheduled to fire precisely at the <strong>next screen refresh</strong> (<code>win.flip()</code>).</li>
 </ol>
 <p>Why does this matter? In EEG and psychophysics, you often want to <strong>synchronize</strong> your triggers with <strong>visual events</strong>. If your display updates at a certain frame, sending a trigger “immediately” may not perfectly align with that visual onset. Conversely, if the trigger is not tied to any visual event (e.g., it’s only marking an internal logic change or a participant’s key press), an immediate trigger might suffice.</p>
-<hr/>
-<h4 id="1.3.1-Immediate-Trigger-Calls">1.3.1 Immediate Trigger Calls<a class="anchor-link" href="#1.3.1-Immediate-Trigger-Calls">¶</a></h4><p><strong>When do they happen?</strong><br/>
+<h3 id="4.1-Immediate-Trigger-Calls">4.1 Immediate Trigger Calls<a class="anchor-link" href="#4.1-Immediate-Trigger-Calls">¶</a></h3><p><strong>When do they happen?</strong><br/>
 They occur exactly at the line in your code where you call the trigger function—there’s no waiting for a screen refresh.</p>
 <p><strong>Use Case</strong></p>
 <ul>
@@ -7732,7 +7668,7 @@ They occur exactly at the line in your code where you call the trigger function�
 <span class="k">if</span> <span class="s1">'space'</span> <span class="ow">in</span> <span class="n">key_resp</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
     <span class="n">send_trigger_phasic</span><span class="p">(</span><span class="n">ser</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
 </pre></div>
-<h4 id="1.3.2-On-Flip-Trigger-Calls">1.3.2 On-Flip Trigger Calls<a class="anchor-link" href="#1.3.2-On-Flip-Trigger-Calls">¶</a></h4><p><strong>When do they happen?</strong><br/>
+<h3 id="4.2-On-Flip-Trigger-Calls">4.2 On-Flip Trigger Calls<a class="anchor-link" href="#4.2-On-Flip-Trigger-Calls">¶</a></h3><p><strong>When do they happen?</strong><br/>
 At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code> executes in PsychoPy.</p>
 <p><strong>Use Case</strong></p>
 <ul>
@@ -7748,19 +7684,7 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>  <span class="c1"># reset line back to 0</span>
 </pre></div>
 <p>Here, the trigger sets to value 20 exactly when the screen buffers swap, meaning the participant sees the new stimulus and the EEG marker changes in the same instant.</p>
-<p><strong>Pros</strong></p>
-<ul>
-<li><p>Ideal for precise synchronization of triggers with visual updates (critical for many ERP studies).</p>
-</li>
-<li><p>Reduces timing jitter associated with uncertain code execution times.
-<strong>Cons</strong></p>
-</li>
-<li><p>Slightly more complex approach (function scheduling + the actual flip).</p>
-</li>
-<li><p>If you forget to call win.flip(), the trigger won’t fire at all.</p>
-</li>
-</ul>
-<h4 id="1.3.3-Choosing-the-Optimal-Timing-Approach">1.3.3 Choosing the Optimal Timing Approach<a class="anchor-link" href="#1.3.3-Choosing-the-Optimal-Timing-Approach">¶</a></h4><ol>
+<h3 id="4.3-Choosing-the-Optimal-Timing-Approach">4.3 Choosing the Optimal Timing Approach<a class="anchor-link" href="#4.3-Choosing-the-Optimal-Timing-Approach">¶</a></h3><ol>
 <li><strong>Immediate</strong>:</li>
 </ol>
 <ul>
@@ -7773,8 +7697,13 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 <ul>
 <li>Essential if your stimulus onset marker must match the exact frame the participant sees the stimulus.</li>
 <li>The standard in tasks where accurate time-locking is mandatory (e.g., ERP paradigms).</li>
-<li>Many experiments employ both methods: on-flip triggers for controlling stimulus presentation alignment, and immediate triggers for user responses or internal transitions.</li>
 </ul>
+<p>In practice, many experiments use both:</p>
+<ul>
+<li>On-Flip triggers to ensure stimulus presentation is accurately time-locked in the EEG data.</li>
+<li>Immediate triggers to mark events like button presses or internal state changes that do not depend on a specific screen refresh cycle.</li>
+</ul>
+<hr/>
 </div>
 </div>
 </div>
@@ -7785,118 +7714,167 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="1.4-Implementation:-Tonic-&amp;-Phasic-Trigger-Functions">1.4 Implementation: Tonic &amp; Phasic Trigger Functions<a class="anchor-link" href="#1.4-Implementation:-Tonic-&amp;-Phasic-Trigger-Functions">¶</a></h3><p>So far, you’ve learned about <strong>tonic vs. phasic</strong> triggers (section 1.2) and <strong>immediate vs. on-flip</strong> timing (section 1.3). In this final section, we’ll provide <strong>ready-to-use</strong> PsychoPy functions that let you combine these concepts in practice. You can copy and paste these into your experiment script to send event markers via the serial port.</p>
-<h4 id="Overview-of-These-Functions">Overview of These Functions<a class="anchor-link" href="#Overview-of-These-Functions">¶</a></h4><ol>
-<li><strong>Phasic Triggers</strong><ul>
-<li><strong><code>send_trigger_phasic</code></strong>: Sends a brief (e.g. 10–50 ms) pulse immediately.</li>
-<li><strong><code>send_trigger_onflip_phasic</code></strong>: Same brief pulse, but scheduled at the next screen flip.</li>
+<h2 id="5.-Implementation:-Tonic-&amp;-Phasic-Trigger-Functions">5. Implementation: Tonic &amp; Phasic Trigger Functions<a class="anchor-link" href="#5.-Implementation:-Tonic-&amp;-Phasic-Trigger-Functions">¶</a></h2><p>Having seen the differences between <strong>Tonic</strong> vs. <strong>Phasic</strong> triggers (Section 3) and <strong>Immediate</strong> vs. <strong>On-Flip</strong> timing (Section 4), you’re now ready to integrate these concepts into your own PsychoPy experiments. Below, you’ll find <strong>ready-to-use</strong> Python functions that illustrate how to send triggers via a serial port in both a phasic (brief) and tonic (sustained) manner, as well as how to schedule them <strong>immediately</strong> or <strong>at the next screen flip</strong>.</p>
+<h3 id="5.1-Overview-of-Provided-Functions">5.1 Overview of Provided Functions<a class="anchor-link" href="#5.1-Overview-of-Provided-Functions">¶</a></h3><ol>
+<li><p><strong>Phasic (Brief) Triggers</strong></p>
+<ul>
+<li><code>send_trigger_phasic(ser, data, dur=0.01)</code><ul>
+<li>Sends a short, immediate pulse (e.g., 10–50 ms).</li>
 </ul>
 </li>
-<li><strong>Tonic Triggers</strong><ul>
-<li><strong><code>send_trigger_tonic</code></strong>: Sets the line to a nonzero value and <strong>holds</strong> it until manually reset.</li>
-<li><strong><code>reset_trigger_tonic</code></strong>: Resets a tonic trigger back to 0.</li>
-<li><strong><code>send_trigger_onflip</code></strong>: Schedules a tonic trigger to begin at the next screen flip.</li>
+<li><code>send_trigger_onflip_phasic(win, ser, trigger_value, dur=0.05)</code><ul>
+<li>Sends a short pulse <strong>on the next screen flip</strong>, then resets it after <code>dur</code> seconds.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Tonic (Sustained) Triggers</strong></p>
+<ul>
+<li><code>send_trigger_tonic(ser, trigger_value)</code><ul>
+<li>Immediately sets the trigger line to a nonzero value and <strong>holds</strong> it until you reset it.</li>
+</ul>
+</li>
+<li><code>reset_trigger_tonic(ser)</code><ul>
+<li>Resets a tonic trigger back to 0.</li>
+</ul>
+</li>
+<li><code>send_trigger_onflip_tonic(win, ser, trigger_value)</code><ul>
+<li>Schedules a tonic trigger to begin <strong>on the next screen flip</strong>, and it stays “on” until you manually reset it.</li>
+</ul>
+</li>
 </ul>
 </li>
 </ol>
-<p>Together, these functions give you fine-grained control: you can either fire your marker right away or wait until the precise moment the stimulus appears on-screen, and you can choose whether that marker is a short pulse (phasic) or stays “on” until you reset it (tonic).</p>
-<p>Below is all the code in one place, with docstrings explaining the parameters and usage.</p>
-<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">psychopy</span> <span class="kn">import</span> <span class="n">core</span>
+<p>These functions give you the <strong>fine-grained control</strong> to either:</p>
+<ul>
+<li><strong>Trigger Immediately</strong> (for non-visual events or logic-based signals), or</li>
+<li><strong>Trigger On-Flip</strong> (for precise alignment with screen refresh and stimulus onset).</li>
+</ul>
+<p>Each code snippet below includes a docstring describing how it works, the arguments it takes, and typical usage notes.</p>
+<h3 id="5.2-Code-Snippets">5.2 Code Snippets<a class="anchor-link" href="#5.2-Code-Snippets">¶</a></h3><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">psychopy</span> <span class="kn">import</span> <span class="n">core</span>
 
 <span class="k">def</span> <span class="nf">send_trigger_phasic</span><span class="p">(</span><span class="n">ser</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Send a short trigger pulse by writing `data` to the serial port,</span>
-<span class="sd">    wait approximately `dur` seconds, then write 0 to turn the trigger off.</span>
+<span class="sd">    Send a brief (phasic) trigger immediately.</span>
 <span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        ser (serial.Serial): An open serial port object.</span>
-<span class="sd">        data (int): The trigger value to send.</span>
-<span class="sd">        dur (float): Duration in seconds to keep the trigger high.</span>
+<span class="sd">    - 'ser': An open serial.Serial object for communication.</span>
+<span class="sd">    - 'data': Integer representing the trigger code to send.</span>
+<span class="sd">    - 'dur': How long (in seconds) to keep the trigger active before resetting to 0.</span>
+<span class="sd">    </span>
+<span class="sd">    Usage Example:</span>
+<span class="sd">        send_trigger_phasic(ser, 10, dur=0.02)</span>
+<span class="sd">        # Instantly sets the line to 10, holds for ~20 ms, then returns to 0.</span>
 <span class="sd">    """</span>
-    <span class="c1"># Mark the start time</span>
+    <span class="c1"># Record the start time to manage the pulse length accurately</span>
     <span class="n">start</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">getTime</span><span class="p">()</span>
     
-    <span class="c1"># Write the trigger value</span>
+    <span class="c1"># Send the trigger value</span>
     <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
     
-    <span class="c1"># Measure how long that took</span>
+    <span class="c1"># Calculate remaining time to hold the trigger</span>
     <span class="n">elapsed</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">getTime</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
     <span class="n">remaining</span> <span class="o">=</span> <span class="n">dur</span> <span class="o">-</span> <span class="n">elapsed</span>
     
-    <span class="c1"># Avoid negative waiting if sending took longer than dur</span>
+    <span class="c1"># If the time to send the trigger was shorter than 'dur', wait the difference</span>
     <span class="k">if</span> <span class="n">remaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">core</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">remaining</span><span class="p">)</span>
     
-    <span class="c1"># Reset the trigger to 0</span>
+    <span class="c1"># Reset the trigger to 0 after the pulse</span>
     <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
+
 
 <span class="k">def</span> <span class="nf">send_trigger_onflip_phasic</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">ser</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Turn a trigger on at the next screen flip, hold it for `dur` seconds,</span>
-<span class="sd">    then reset to 0. This approach doesn't use core.callLater.</span>
+<span class="sd">    Schedule a brief (phasic) trigger to fire at the next screen flip, then reset.</span>
 <span class="sd">    </span>
-<span class="sd">    Typically used for precise alignment of a short pulse (phasic) with</span>
-<span class="sd">    a visual stimulus onset (on the next flip).</span>
+<span class="sd">    - 'win': A psychopy.visual.Window object where you call 'win.flip()'.</span>
+<span class="sd">    - 'ser': An open serial.Serial object for communication.</span>
+<span class="sd">    - 'trigger_value': Integer code to send.</span>
+<span class="sd">    - 'dur': Duration (in seconds) to keep the trigger active.</span>
+<span class="sd">    </span>
+<span class="sd">    After 'win.flip()', we hold the trigger line high for 'dur' seconds,</span>
+<span class="sd">    then automatically reset it to 0.</span>
+<span class="sd">    </span>
+<span class="sd">    Usage Example:</span>
+<span class="sd">        send_trigger_onflip_phasic(win, ser, trigger_value=20, dur=0.05)</span>
+<span class="sd">        # The line will go to 20 exactly when win.flip() is executed,</span>
+<span class="sd">        # remain high for 50 ms, then reset to 0.</span>
 <span class="sd">    """</span>
     
     <span class="k">def</span> <span class="nf">turn_trigger_on</span><span class="p">():</span>
         <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">trigger_value</span><span class="p">)))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Trigger </span><span class="si">{</span><span class="n">trigger_value</span><span class="si">}</span><span class="s2"> sent"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[PHASIC-ON-FLIP] Trigger </span><span class="si">{</span><span class="n">trigger_value</span><span class="si">}</span><span class="s2"> sent at screen flip"</span><span class="p">)</span>
     
-    <span class="c1"># 1) Queue the "turn on" for the next flip</span>
+    <span class="c1"># 1) Queue the "turn on" function for the next flip</span>
     <span class="n">win</span><span class="o">.</span><span class="n">callOnFlip</span><span class="p">(</span><span class="n">turn_trigger_on</span><span class="p">)</span>
     
-    <span class="c1"># 2) Actually flip so that the trigger command executes now</span>
+    <span class="c1"># 2) Execute the next flip</span>
     <span class="n">win</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
 
-    <span class="c1"># 3) Wait the desired pulse duration</span>
+    <span class="c1"># 3) Hold the trigger for 'dur' seconds</span>
     <span class="n">core</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">dur</span><span class="p">)</span>
 
-    <span class="c1"># 4) Turn the trigger off</span>
+    <span class="c1"># 4) Reset the trigger line to 0</span>
     <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Trigger reset to 0"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"[PHASIC-ON-FLIP] Trigger reset to 0"</span><span class="p">)</span>
+
 
 <span class="k">def</span> <span class="nf">send_trigger_tonic</span><span class="p">(</span><span class="n">ser</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Send a 'tonic' trigger by writing `trigger_value` to the serial port.</span>
-<span class="sd">    The line remains at this value until you explicitly reset it.</span>
+<span class="sd">    Set a 'tonic' (sustained) trigger immediately.</span>
 <span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        ser (serial.Serial): An open serial port object.</span>
-<span class="sd">        trigger_value (int): The trigger value to send.</span>
+<span class="sd">    - 'ser': An open serial.Serial object.</span>
+<span class="sd">    - 'trigger_value': Integer code to send.</span>
+<span class="sd">    </span>
+<span class="sd">    The trigger will remain at 'trigger_value' until you manually reset it.</span>
+<span class="sd">    </span>
+<span class="sd">    Usage Example:</span>
+<span class="sd">        send_trigger_tonic(ser, 5)</span>
+<span class="sd">        # The line will stay at 5 indefinitely, or until reset_trigger_tonic() is called.</span>
 <span class="sd">    """</span>
     <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">trigger_value</span><span class="p">)))</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[TONIC] Trigger set to </span><span class="si">{</span><span class="n">trigger_value</span><span class="si">}</span><span class="s2"> (must reset later)."</span><span class="p">)</span>
 
+
 <span class="k">def</span> <span class="nf">reset_trigger_tonic</span><span class="p">(</span><span class="n">ser</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Manually reset the trigger line to 0 after using a tonic trigger.</span>
+<span class="sd">    Reset a tonic trigger back to 0.</span>
 <span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        ser (serial.Serial): An open serial port object.</span>
+<span class="sd">    - 'ser': An open serial.Serial object.</span>
+<span class="sd">    </span>
+<span class="sd">    Usage Example:</span>
+<span class="sd">        reset_trigger_tonic(ser)</span>
+<span class="sd">        # Immediately sets the line back to 0.</span>
 <span class="sd">    """</span>
     <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">"[TONIC] Trigger reset to 0."</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">send_trigger_onflip</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">ser</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="nf">send_trigger_onflip_tonic</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">ser</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Turn a 'tonic' trigger on at the next screen flip (i.e., precisely when</span>
-<span class="sd">    the new frame is drawn). The line remains at this value until you explicitly</span>
-<span class="sd">    reset it by calling `reset_trigger_tonic`.</span>
+<span class="sd">    Schedule a 'tonic' trigger to begin exactly on the next screen flip.</span>
 <span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        win (visual.Window): PsychoPy window object.</span>
-<span class="sd">        ser (serial.Serial): An open serial port object.</span>
-<span class="sd">        trigger_value (int): The trigger value to send.</span>
+<span class="sd">    - 'win': A psychopy.visual.Window object.</span>
+<span class="sd">    - 'ser': An open serial.Serial object.</span>
+<span class="sd">    - 'trigger_value': Integer code to send.</span>
+<span class="sd">    </span>
+<span class="sd">    This line remains active until you call reset_trigger_tonic(). </span>
+<span class="sd">    Ideal for block-based marking where exact alignment with stimulus onset is critical.</span>
+<span class="sd">    </span>
+<span class="sd">    Usage Example:</span>
+<span class="sd">        send_trigger_onflip_tonic(win, ser, 9)</span>
+<span class="sd">        win.flip()</span>
+<span class="sd">        # The line goes to 9 on that flip and stays high until reset_trigger_tonic(ser).</span>
 <span class="sd">    """</span>
+    
     <span class="k">def</span> <span class="nf">turn_trigger_on</span><span class="p">():</span>
         <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">trigger_value</span><span class="p">)))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[TONIC] Trigger </span><span class="si">{</span><span class="n">trigger_value</span><span class="si">}</span><span class="s2"> set on next flip (must reset later)."</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[TONIC-ON-FLIP] Trigger </span><span class="si">{</span><span class="n">trigger_value</span><span class="si">}</span><span class="s2"> set at screen flip (must reset later)."</span><span class="p">)</span>
     
-    <span class="c1"># Schedule the trigger command for the next screen refresh</span>
+    <span class="c1"># Schedule the trigger for the next screen refresh</span>
     <span class="n">win</span><span class="o">.</span><span class="n">callOnFlip</span><span class="p">(</span><span class="n">turn_trigger_on</span><span class="p">)</span>
     
-    <span class="c1"># Actually flip to execute the scheduled call</span>
+    <span class="c1"># Actually flip to trigger</span>
     <span class="n">win</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -7909,7 +7887,41 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="2.-Example-Task:-Go/No-Go-on-Pavlovia">2. Example Task: Go/No-Go on Pavlovia<a class="anchor-link" href="#2.-Example-Task:-Go/No-Go-on-Pavlovia">¶</a></h2><p>This section demonstrates how to incorporate triggers (both <strong>phasic</strong> and <strong>tonic</strong>) into a <strong>Go/No-Go</strong> experiment. The same logic applies to any other task; simply adapt the code for your events and conditions. We’ve also uploaded an example task to Pavlonia for the <a href="https://gitlab.pavlovia.org/smilingdevil/gonogo_phasic_triggers">Phasic</a> and <a href="">Tonic</a> approach so you can see the implementation in action.</p>
+<h3 id="5.3-Practical-Tips-for-Using-These-Functions">5.3 Practical Tips for Using These Functions<a class="anchor-link" href="#5.3-Practical-Tips-for-Using-These-Functions">¶</a></h3><ol>
+<li><p><strong>Initialize Your Serial Port First</strong></p>
+<p>Before you call any trigger functions, open and configure the serial port. For example:</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">serial</span>
+<span class="n">ser</span> <span class="o">=</span> <span class="n">serial</span><span class="o">.</span><span class="n">Serial</span><span class="p">(</span><span class="s1">'COM3'</span><span class="p">)</span>  <span class="c1"># Replace 'COM3' with the correct port</span>
+<span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>  <span class="c1"># Ensure the line starts at 0</span>
+</pre></div>
+<p>This step ensures that triggers can be sent correctly and that the line is initially set to zero.</p>
+</li>
+<li><p><strong>Define Your Trigger Codes</strong></p>
+<p>It’s helpful to keep a clear mapping of experimental events to numeric codes:</p>
+<div class="highlight"><pre><span></span><span class="n">GO_STIM_ONSET</span>       <span class="o">=</span> <span class="mi">10</span>
+<span class="n">NO_GO_STIM_ONSET</span>    <span class="o">=</span> <span class="mi">11</span>
+<span class="n">RESPONSE_CORRECT</span>    <span class="o">=</span> <span class="mi">20</span>
+<span class="n">RESPONSE_INCORRECT</span>  <span class="o">=</span> <span class="mi">21</span>
+</pre></div>
+<p>This makes your code more readable and maintain consistency throughout your experiment.</p>
+</li>
+<li><p><strong>Combine Tonic &amp; Phasic Where Needed</strong></p>
+<ul>
+<li>Tonic triggers are ideal for marking entire blocks or extended phases.
+Phasic triggers are perfect for brief events (e.g., stimulus onset, button press) within those blocks.
+By using both, you maintain a clear separation of long-running states and short, discrete events.</li>
+<li>Phasic triggers are perfect for brief events (e.g., stimulus onset, button press) within those blocks.</li>
+</ul>
+<p>By using both, you maintain a clear separation of long-running states and short, discrete events.</p>
+</li>
+<li><p><strong>Always Reset Tonic Triggers</strong></p>
+<p>If you call <code>send_trigger_tonic(ser, value)</code>, remember to call <code>reset_trigger_tonic(ser)</code> once that block or condition ends. Otherwise, your EEG recording may remain at the same trigger value indefinitely, making later events harder to interpret.</p>
+</li>
+<li><p><strong>Check Timing Requirements</strong></p>
+<p>Minimum Pulse Width: Confirm your EEG system’s specs; many require at least</p>
+</li>
+</ol>
+<hr/>
 </div>
 </div>
 </div>
@@ -7920,7 +7932,18 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="2.1-High-Level-Task-Flow">2.1 High-Level Task Flow<a class="anchor-link" href="#2.1-High-Level-Task-Flow">¶</a></h3><p>A typical <strong>Go/No-Go</strong> experiment might follow these steps:</p>
+<h2 id="6.-Example-Task:-Go/No-Go-on-Pavlovia">6. Example Task: Go/No-Go on Pavlovia<a class="anchor-link" href="#6.-Example-Task:-Go/No-Go-on-Pavlovia">¶</a></h2><p>This section demonstrates how to incorporate triggers (both <strong>phasic</strong> and <strong>tonic</strong>) into a <strong>Go/No-Go</strong> experiment. The same logic applies to any other task; simply adapt the code for your events and conditions. We’ve also uploaded an example task to Pavlonia for the <a href="https://gitlab.pavlovia.org/smilingdevil/gonogo_phasic_triggers">Phasic</a> and <a href="https://gitlab.pavlovia.org/smilingdevil/gonogo_tonic_triggers">Tonic</a> approach so you can see the implementation in action.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="6.1-High-Level-Task-Flow">6.1 High-Level Task Flow<a class="anchor-link" href="#6.1-High-Level-Task-Flow">¶</a></h3><p>A typical <strong>Go/No-Go</strong> experiment might follow these steps:</p>
 <ol>
 <li><strong>Task Start</strong><ul>
 <li>Optionally send a “task start” trigger, either as a brief (phasic) pulse or a tonic signal.</li>
@@ -7958,11 +7981,11 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="2.2-Adding-Triggers-in-PsychoPy%E2%80%99s-Builder">2.2 Adding Triggers in PsychoPy’s Builder<a class="anchor-link" href="#2.2-Adding-Triggers-in-PsychoPy%E2%80%99s-Builder">¶</a></h3><p>We’ll assume you have a Builder setup with:</p>
+<h3 id="6.2-Adding-Triggers-in-PsychoPy%E2%80%99s-Builder">6.2 Adding Triggers in PsychoPy’s Builder<a class="anchor-link" href="#6.2-Adding-Triggers-in-PsychoPy%E2%80%99s-Builder">¶</a></h3><p>We’ll assume you have a Builder setup with:</p>
 <ul>
 <li>A routine named <strong>“trial”</strong> for each Go/No-Go stimulus presentation.</li>
 <li>A <strong>keyboard component</strong> named <code>key_resp</code> for participant responses.</li>
-<li>A <strong>Code Component</strong> in that routine (plus potentially separate routines for “start_trigger” and “goodbye”).</li>
+<li>A <strong>Code Component</strong> in that routine (plus potentially separate routines for “start_trigger” and “end_trigger”).</li>
 </ul>
 </div>
 </div>
@@ -7974,7 +7997,20 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h4 id="2.2.1-%E2%80%9CBegin-Experiment%E2%80%9D-Tab">2.2.1 “Begin Experiment” Tab<a class="anchor-link" href="#2.2.1-%E2%80%9CBegin-Experiment%E2%80%9D-Tab">¶</a></h4><p>In your Code Component’s <strong>“Begin Experiment”</strong> section:</p>
+<h4 id="2.2.1-%E2%80%9CBegin-Experiment%E2%80%9D-Tab">2.2.1 “Begin Experiment” Tab<a class="anchor-link" href="#2.2.1-%E2%80%9CBegin-Experiment%E2%80%9D-Tab">¶</a></h4><p>In your Code Component’s <strong>“Begin Experiment”</strong> section in the <code>Welcome</code> routine, define the list of triggers and your functions as explained in Section 5.2, based on the type of trigger you are using (Phasic or tonic).</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<ul>
+<li>Phasic</li>
+</ul>
 </div>
 </div>
 </div>
@@ -8006,7 +8042,7 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 <span class="n">TASK_END</span>     <span class="o">=</span> <span class="mi">99</span>
 
 <span class="c1"># Define your phasic/tonic trigger functions</span>
-<span class="k">def</span> <span class="nf">send_trigger</span><span class="p">(</span><span class="n">ser</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">send_trigger_phasic</span><span class="p">(</span><span class="n">ser</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
 
     <span class="n">start</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">getTime</span><span class="p">()</span>
     <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
@@ -8017,7 +8053,7 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
     <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
 
 
-<span class="k">def</span> <span class="nf">send_trigger_onflip</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">ser</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">send_trigger_onflip_phasic</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">ser</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">turn_trigger_on</span><span class="p">():</span>
         <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">trigger_value</span><span class="p">)))</span>
@@ -8039,7 +8075,81 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<ul>
+<li>Tonic</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">serial</span>
+<span class="n">Ser</span><span class="o">=</span><span class="n">serial</span><span class="o">.</span><span class="n">Serial</span><span class="p">(</span><span class="s1">'COM3'</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">psychopy</span> <span class="kn">import</span> <span class="n">core</span>
+
+<span class="k">def</span> <span class="nf">send_trigger_tonic</span><span class="p">(</span><span class="n">ser</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">):</span>
+    <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">trigger_value</span><span class="p">)))</span>
+    <span class="n">core</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[TONIC] Trigger set to </span><span class="si">{</span><span class="n">trigger_value</span><span class="si">}</span><span class="s2"> (must reset later)."</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">reset_trigger_tonic</span><span class="p">(</span><span class="n">ser</span><span class="p">):</span>
+    <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"[TONIC] Trigger reset to 0."</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">send_trigger_onflip_tonic</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">ser</span><span class="p">,</span> <span class="n">trigger_value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">turn_trigger_on</span><span class="p">():</span>
+        <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">trigger_value</span><span class="p">)))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[TONIC] Trigger </span><span class="si">{</span><span class="n">trigger_value</span><span class="si">}</span><span class="s2"> sent on next flip (must reset later)."</span><span class="p">)</span>
+    
+    <span class="c1"># Schedule the trigger for the next screen refresh</span>
+    <span class="n">win</span><span class="o">.</span><span class="n">callOnFlip</span><span class="p">(</span><span class="n">turn_trigger_on</span><span class="p">)</span>
+    
+    <span class="c1"># Perform the flip to execute the scheduled command</span>
+    <span class="n">win</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">send_trigger_phasic</span><span class="p">(</span><span class="n">ser</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">getTime</span><span class="p">()</span>
+    <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">getTime</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="n">remaining</span> <span class="o">=</span> <span class="n">dur</span> <span class="o">-</span> <span class="n">elapsed</span>
+    <span class="c1"># Avoid negative waiting if sending took longer than dur</span>
+    <span class="k">if</span> <span class="n">remaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">core</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">remaining</span><span class="p">)</span>
+    <span class="c1"># Reset the trigger to 0</span>
+    <span class="n">ser</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h4 id="2.2.2-%E2%80%9CBegin-Routine%E2%80%9D-Tab-(Stimulus-Onset)">2.2.2 “Begin Routine” Tab (Stimulus Onset)<a class="anchor-link" href="#2.2.2-%E2%80%9CBegin-Routine%E2%80%9D-Tab-(Stimulus-Onset)">¶</a></h4><p>In the <strong>“Begin Routine”</strong> tab of your <code>trial</code> routine’s Code Component, you can decide how to mark stimulus onset. For instance, if your trial dictionary is named <code>thisTrial</code> and has a key <code>'this_image'</code>:</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<ul>
+<li>Phasic</li>
+</ul>
 </div>
 </div>
 </div>
@@ -8056,12 +8166,6 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
     <span class="n">send_trigger_phasic</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span> <span class="n">GO_ONSET</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
 <span class="k">elif</span> <span class="n">thisTrial</span><span class="p">[</span><span class="s1">'this_image'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'nogo.png'</span><span class="p">:</span>
     <span class="n">send_trigger_phasic</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span> <span class="n">NOGO_ONSET</span><span class="p">,</span> <span class="n">dur</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
-
-<span class="c1"># If using tonic instead, do:</span>
-<span class="c1"># if thisTrial['this_image'] == 'go.png':</span>
-<span class="c1">#     send_trigger_tonic(Ser, GO_ONSET)</span>
-<span class="c1"># elif thisTrial['this_image'] == 'nogo.png':</span>
-<span class="c1">#     send_trigger_tonic(Ser, NOGO_ONSET)</span>
 </pre></div>
 </div>
 </div>
@@ -8074,7 +8178,57 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h4 id="2.2.3-%E2%80%9CEnd-Routine%E2%80%9D-Tab-(Response-Evaluation)">2.2.3 “End Routine” Tab (Response Evaluation)<a class="anchor-link" href="#2.2.3-%E2%80%9CEnd-Routine%E2%80%9D-Tab-(Response-Evaluation)">¶</a></h4><p>After the participant responds (or doesn’t), you can mark correct vs. incorrect outcomes. For instance:</p>
+<ul>
+<li>Tonic</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="c1"># Decide which trigger to send depending on the image</span>
+
+<span class="k">if</span> <span class="n">thisTrial</span><span class="p">[</span><span class="s1">'this_image'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'go.png'</span><span class="p">:</span>
+    <span class="n">combined_trigger</span> <span class="o">=</span> <span class="n">TASK_TONIC_TRIGGER</span> <span class="o">|</span> <span class="n">GO_ONSET_TONIC_TRIGGER</span>
+    <span class="n">send_trigger_onflip_tonic</span><span class="p">(</span><span class="n">win</span><span class="p">,</span><span class="n">Ser</span><span class="p">,</span> <span class="n">combined_trigger</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"GO_ONSET_TONIC_TRIGGER activated."</span><span class="p">)</span>
+
+<span class="k">elif</span> <span class="n">thisTrial</span><span class="p">[</span><span class="s1">'this_image'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'nogo.png'</span><span class="p">:</span>
+    <span class="n">combined_trigger</span> <span class="o">=</span> <span class="n">TASK_TONIC_TRIGGER</span> <span class="o">|</span> <span class="n">NOGO_ONSET_TONIC_TRIGGER</span>
+    <span class="n">send_trigger_onflip_tonic</span><span class="p">(</span><span class="n">win</span><span class="p">,</span><span class="n">Ser</span><span class="p">,</span> <span class="n">combined_trigger</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"NOGO_ONSET_TONIC_TRIGGER activated."</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h4 id="2.2.3-%E2%80%9CEnd-Routine%E2%80%9D-Tab-(Response-Evaluation)">2.2.3 “End Routine” Tab (Response Evaluation)<a class="anchor-link" href="#2.2.3-%E2%80%9CEnd-Routine%E2%80%9D-Tab-(Response-Evaluation)">¶</a></h4><p>After the participant responds (or doesn’t), you can mark correct vs. incorrect outcomes. To implement this in the <strong>“End Routine”</strong> tab of the <code>trial</code> routine you can use the following code:</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<ul>
+<li>Phasic</li>
+</ul>
 </div>
 </div>
 </div>
@@ -8087,11 +8241,8 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-python"><pre><span></span><span class="c1"># Grab whatever keys were pressed this trial</span>
-<span class="n">resp_keys</span> <span class="o">=</span> <span class="n">key_resp</span><span class="o">.</span><span class="n">keys</span>  <span class="c1"># Might be [], ['space'], or None</span>
-
-<span class="c1"># Ensure resp_keys is always a list (some older PsychoPy versions return None)</span>
-<span class="k">if</span> <span class="n">resp_keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="n">resp_keys</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">resp_keys</span> <span class="o">=</span> <span class="n">key_resp</span><span class="o">.</span><span class="n">keys</span> <span class="k">if</span> <span class="n">key_resp</span><span class="o">.</span><span class="n">keys</span> <span class="k">else</span> <span class="p">[]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">resp_keys</span><span class="p">)</span>
 
 <span class="c1"># Determine correctness based on image and response</span>
 <span class="k">if</span> <span class="n">thisTrial</span><span class="p">[</span><span class="s1">'this_image'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'go.png'</span><span class="p">:</span>
@@ -8127,84 +8278,49 @@ At the <strong>next screen refresh</strong>—the moment <code>win.flip()</code>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Building-a-trigger-structure">Building a trigger structure<a class="anchor-link" href="#Building-a-trigger-structure">¶</a></h2>
+<ul>
+<li>Tonic</li>
+</ul>
 </div>
 </div>
 </div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="The-tonic-way">The tonic way<a class="anchor-link" href="#The-tonic-way">¶</a></h3>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="n">resp_keys</span> <span class="o">=</span> <span class="n">key_resp</span><span class="o">.</span><span class="n">keys</span> <span class="k">if</span> <span class="n">key_resp</span><span class="o">.</span><span class="n">keys</span> <span class="k">else</span> <span class="p">[]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">resp_keys</span><span class="p">)</span>
+<span class="c1"># Determine correctness based on image and response</span>
+<span class="k">if</span> <span class="n">thisTrial</span><span class="p">[</span><span class="s1">'this_image'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'go.png'</span><span class="p">:</span>
+    <span class="c1"># For a Go trial, correct if the participant pressed 'space'</span>
+    <span class="k">if</span> <span class="s1">'space'</span> <span class="ow">in</span> <span class="n">resp_keys</span><span class="p">:</span>
+        <span class="n">combined_trigger</span> <span class="o">=</span> <span class="n">TASK_TONIC_TRIGGER</span> <span class="o">|</span> <span class="n">CORRECT_RESP_TONIC_TRIGGER</span>
+        <span class="n">send_trigger_tonic</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span> <span class="n">combined_trigger</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"CORRECT_RESP_TONIC_TRIGGER activated for Go trial."</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">combined_trigger</span> <span class="o">=</span> <span class="n">TASK_TONIC_TRIGGER</span> <span class="o">|</span> <span class="n">INCORRECT_RESP_TONIC_TRIGGER</span>
+        <span class="n">send_trigger_tonic</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span> <span class="n">combined_trigger</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"INCORRECT_RESP_TONIC_TRIGGER activated for Go trial."</span><span class="p">)</span>
+
+<span class="k">elif</span> <span class="n">thisTrial</span><span class="p">[</span><span class="s1">'this_image'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'nogo.png'</span><span class="p">:</span>
+    <span class="c1"># For a NoGo trial, correct if NO key was pressed</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">resp_keys</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">combined_trigger</span> <span class="o">=</span> <span class="n">TASK_TONIC_TRIGGER</span> <span class="o">|</span> <span class="n">CORRECT_RESP_TONIC_TRIGGER</span>
+        <span class="n">send_trigger_tonic</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span> <span class="n">combined_trigger</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"CORRECT_RESP_TONIC_TRIGGER activated for No-Go trial."</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">combined_trigger</span> <span class="o">=</span> <span class="n">TASK_TONIC_TRIGGER</span> <span class="o">|</span> <span class="n">INCORRECT_RESP_TONIC_TRIGGER</span>
+        <span class="n">send_trigger_tonic</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span> <span class="n">combined_trigger</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"INCORRECT_RESP_TONIC_TRIGGER activated for No-Go trial."</span><span class="p">)</span>
+<span class="c1"># After sending the response trigger, reset to task-level tonic trigger</span>
+<span class="n">send_trigger_tonic</span><span class="p">(</span><span class="n">Ser</span><span class="p">,</span> <span class="n">TASK_TONIC_TRIGGER</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Returned to TASK_TONIC_TRIGGER state."</span><span class="p">)</span>
+</pre></div>
 </div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="The-phasic-way">The phasic way<a class="anchor-link" href="#The-phasic-way">¶</a></h3>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Adding-triggers-to-your-PsychoPy-experiment">Adding triggers to your PsychoPy experiment<a class="anchor-link" href="#Adding-triggers-to-your-PsychoPy-experiment">¶</a></h2><p>As an example, lets implement triggers in the <a href="https://gitlab.pavlovia.org/demos/go_nogo">default Go/No-go task</a> that can be found on Pavlovia</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Open-the-port-at-the-beginning-of-your-experiment">Open the port at the beginning of your experiment<a class="anchor-link" href="#Open-the-port-at-the-beginning-of-your-experiment">¶</a></h3>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Make-sure-the-trigger-channel-is-set-to-0-as-soon-as-your-experiment-starts">Make sure the trigger channel is set to 0 as soon as your experiment starts<a class="anchor-link" href="#Make-sure-the-trigger-channel-is-set-to-0-as-soon-as-your-experiment-starts">¶</a></h3>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Identify-the-events-that-you-need-to-mark,-and-appropriately-call-the-function-to-send-triggers">Identify the events that you need to mark, and appropriately call the function to send triggers<a class="anchor-link" href="#Identify-the-events-that-you-need-to-mark,-and-appropriately-call-the-function-to-send-triggers">¶</a></h3>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="End-your-experiment">End your experiment<a class="anchor-link" href="#End-your-experiment">¶</a></h3><h4 id="Make-sure-the-trigger-channel-is-set-back-to-0-when-your-experiment-stops">Make sure the trigger channel is set back to 0 when your experiment stops<a class="anchor-link" href="#Make-sure-the-trigger-channel-is-set-back-to-0-when-your-experiment-stops">¶</a></h4><h4 id="Close-the-port-properly">Close the port properly<a class="anchor-link" href="#Close-the-port-properly">¶</a></h4>
 </div>
 </div>
 </div>
